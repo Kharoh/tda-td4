@@ -184,32 +184,25 @@ def reduce_matrix_sparse(matrix: SparseMatrix) -> tuple[SparseMatrix, list[tuple
     """Reduce the boundary matrix in sparse format using column operations.
     Returns the reduced boundary matrix and a list of low indices for each column."""
     m = len(matrix)
-    low = [] # List of couples (column index, low index) for each column that is non null
-    
+    low = {} # Key: row index for quick lookup, Value: column index
+
     for j in range(m): # Complexity : linear (number of entries), composed : n^3
-        current_low = -1
-
-        while True: # Complexity : if found each time, linear (number of entries), composed : n^2
-            if not matrix[j]:
-                break  # Column is zero, low does not contain the column, and we don't add this null column to it
+        # while i < j st low(M_-,i) = low(M_-,j) and non zero
+        while True:
+            if not matrix[j]: # Column is zero, low does not contain the column, and we don't add this null column to it
+                break
+            current_low = max(matrix[j]) # Else column is non zero, find the lowest index Find lowest index in column j
             
-            # Else column is non zero, find the lowest index Find lowest index in column j
-            current_low = max(matrix[j])
-            
-            # while i < j st low(M_-,i) = low(M_-,j) and non zero
-            found = False
-            for column_index, low_index in low: # Complexity : linear (number of entries), composed : one execution of symmetric difference, so 2*number of entries
-                if low_index == current_low:
-                    # Add column i to column j (symmetric difference)
-                    matrix[j] ^= matrix[column_index] # Complexity : linear (number of entries), executed once per loop at most (break after)
-                    found = True
-                    break
-
-            if not found:
-                low.append((j, current_low))
-                break  # No more reductions possible
+            i = low.get(current_low)
+            if i is not None:
+                matrix[j] ^= matrix[i]
+            else:
+                low[current_low] = j
+                break
     
-    return matrix, low
+    low_list = [(col, row) for col, row in low.items()]
+
+    return matrix, low_list
 
 # Complexity analysis: O(n^3) in worst case
 # FIXME: 
@@ -292,22 +285,36 @@ def write_barcode(barcode: list[tuple[int, int, int]], filename: str):
             file.write(f"{dim} {birth} {death}\n")
 
 from matplotlib import pyplot as plt
+from math import log10
 
-def plot_barcode(barcode: list[tuple[int, int, int]]):
+def plot_barcode(barcode: list[tuple[int, int, int]], threshold = 0.0, to_log = False):
     """Plot the barcode using matplotlib.
-    Death at infinite is plotted with a red arrow."""
-    plt.figure()
+    Death at infinite is plotted with a red arrow.
+    Create one figure for each dimension."""
+    figures = {}
     y = 0
     for dim, birth, death in barcode:
+        if dim not in figures:
+            figures[dim] = plt.figure(dim)
+            plt.title(f'Barcode for dimension {dim}')
+            plt.xlabel('Filtration Value')
+            plt.ylabel('Homological Features')
+        else:
+            plt.figure(dim)
+        if to_log:
+            birth = log10(birth + 1) # +1 to avoid log(0)
+            if death != float('inf'):
+                death = log10(death + 1)
+        if death - birth < threshold:
+            continue
         if death != float('inf'):
             plt.hlines(y, birth, death, colors='b', lw=2)
         else:
             plt.hlines(y, birth, birth + 1, colors='b', lw=2)
-            plt.arrow(birth + 1, y, 0.5, 0, head_width=1, head_length=0.1, fc='r', ec='r')
+            plt.arrow(birth + 1, y, 0.5, 0, head_width=0.1, head_length=0.1, fc='r', ec='r')
         y += 1
-    plt.xlabel('Filtration Value')
-    plt.ylabel('Homological Features')
-    plt.title('Barcode')
+
+    # Plot all the figures on the same window
     plt.show()
 
 # def main():
@@ -427,32 +434,33 @@ def write_complex(complex: list[float, int, list[int]], filename: str):
 
 
 # Write 2d, 3d, 4d, ..., 10d sphere
-# def main():
-#     for dim in range(2, 11):
-#         d_sphere = build_sphere(dim)
-#         write_complex(d_sphere, f"./filtrations/{dim}_sphere")
+def main():
+    for dim in range(2, 11):
+        d_sphere = build_sphere(dim)
+        write_complex(d_sphere, f"./filtrations/{dim}_sphere")
 
-#     torus = build_torus()
-#     write_complex(torus, "./filtrations/torus")
+    torus = build_torus()
+    write_complex(torus, "./filtrations/torus")
 
-#     filtered_d_sphere_complex = read_filtration("./filtrations/5_sphere")
-#     sort_simplices(filtered_d_sphere_complex)
-#     print(filtered_d_sphere_complex)
-#     boundary_matrix = build_boundary_matrix_sparse(filtered_d_sphere_complex)
-#     reduced_matrix, low = reduce_matrix_sparse(boundary_matrix)
-#     barcode = compute_barcode(reduced_matrix, low, filtered_d_sphere_complex)
-#     write_barcode(barcode, "./output/5_sphere_barcode")
-#     plot_barcode(barcode)
+    filtered_d_sphere_complex = read_filtration("./filtrations/5_sphere")
+    sort_simplices(filtered_d_sphere_complex)
+    print(filtered_d_sphere_complex)
+    boundary_matrix = build_boundary_matrix_sparse(filtered_d_sphere_complex)
+    reduced_matrix, low = reduce_matrix_sparse(boundary_matrix)
+    barcode = compute_barcode(reduced_matrix, low, filtered_d_sphere_complex)
+    write_barcode(barcode, "./output/5_sphere_barcode")
+    plot_barcode(barcode)
 
-#     filtered_torus_complex = read_filtration("./filtrations/torus")
-#     sort_simplices(filtered_torus_complex)
-#     boundary_matrix = build_boundary_matrix_sparse(filtered_torus_complex)
-#     reduced_matrix, low = reduce_matrix_sparse(boundary_matrix)
-#     barcode = compute_barcode(reduced_matrix, low, filtered_torus_complex)
-#     write_barcode(barcode, "./output/torus_barcode")
+    filtered_torus_complex = read_filtration("./filtrations/torus")
+    sort_simplices(filtered_torus_complex)
+    boundary_matrix = build_boundary_matrix_sparse(filtered_torus_complex)
+    reduced_matrix, low = reduce_matrix_sparse(boundary_matrix)
+    barcode = compute_barcode(reduced_matrix, low, filtered_torus_complex)
+    write_barcode(barcode, "./output/torus_barcode")
+    plot_barcode(barcode)
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
 
 # 6. Comparisons TODO:
 
@@ -464,7 +472,8 @@ def write_complex(complex: list[float, int, list[int]], filename: str):
 import time
 
 def main():
-    for file_suffix in ["A", "B", "C", "D"]:
+    # for file_suffix in ["A", "B", "C", "D"]:
+    for file_suffix in ["B"]:
         start_time = time.time()
         filename = f"./filtrations/filtration_{file_suffix}.txt"
         print(f"Processing filtration from file: {filename}")
@@ -496,6 +505,8 @@ def main():
         end_time = time.time()
 
         print(f"Barcode written to '{output_filename}' in {end_time - start_time:.2f} seconds")
+
+        plot_barcode(barcode, 0.05, to_log=True)
 
 
 if __name__ == "__main__":
