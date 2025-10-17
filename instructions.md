@@ -1,0 +1,4 @@
+- you can use whichever language you want (preferably Java, C/C++, or Python), including its standard library, but no external libraries that provide sparse matrix algebra (e.g. Boost, LAPACK, Eigen, or NumPy)
+- you should submit your code (with comments), your filtration files, and a short report (a few pages) detailing the structure of the code and how to compile/run it, a short analysis of its complexity, and the answers to the questions asked in the TD.
+- need an algorithm that works, and in optimal time (complexity) : cubic algorithm in the worst case (gaussian elimination) but in practice, linear algorithm O(m) for sparse matrices O(mlogm) is ok
+- start with dense representation then replace with operations on sparse representation
