@@ -282,6 +282,25 @@ def write_barcode(barcode: list[tuple[int, int, int]], filename: str):
         for dim, birth, death in barcode:
             file.write(f"{dim} {birth} {death}\n")
 
+from matplotlib import pyplot as plt
+
+def plot_barcode(barcode: list[tuple[int, int, int]]):
+    """Plot the barcode using matplotlib.
+    Death at infinite is plotted with a red arrow."""
+    plt.figure()
+    y = 0
+    for dim, birth, death in barcode:
+        if death != float('inf'):
+            plt.hlines(y, birth, death, colors='b', lw=2)
+        else:
+            plt.hlines(y, birth, birth + 1, colors='b', lw=2)
+            plt.arrow(birth + 1, y, 0.5, 0, head_width=1, head_length=0.1, fc='r', ec='r')
+        y += 1
+    plt.xlabel('Filtration Value')
+    plt.ylabel('Homological Features')
+    plt.title('Barcode')
+    plt.show()
+
 # def main():
 #     if len(sys.argv) != 3:
 #         print("Syntax: python main.py <input_filename> <output_filename>")
@@ -331,60 +350,61 @@ def build_torus():
 
     # Form 3 triangles
     complex.append((0.0, 0, [0]))
-    complex.append((0.0, 0, [1]))
-    complex.append((0.0, 0, [2]))
-    complex.append((1.0, 1, [0, 1]))
-    complex.append((1.0, 1, [1, 2]))
-    complex.append((1.0, 1, [2, 0]))
-    complex.append((2.0, 0, [3]))
-    complex.append((2.0, 0, [4]))
-    complex.append((2.0, 0, [5]))
-    complex.append((3.0, 1, [3, 4]))
-    complex.append((3.0, 1, [4, 5]))
-    complex.append((3.0, 1, [5, 3]))
-    complex.append((4.0, 0, [6]))
-    complex.append((4.0, 0, [7]))
-    complex.append((4.0, 0, [8]))
-    complex.append((5.0, 1, [6, 7]))
-    complex.append((5.0, 1, [7, 8]))
-    complex.append((5.0, 1, [8, 6]))
+    complex.append((1.0, 0, [1]))
+    complex.append((2.0, 0, [2]))
+    complex.append((3.0, 1, [0, 1]))
+    complex.append((4.0, 1, [1, 2]))
+    complex.append((5.0, 1, [2, 0]))
+    complex.append((6.0, 0, [3]))
+    complex.append((7.0, 0, [4]))
+    complex.append((8.0, 0, [5]))
+    complex.append((9.0, 1, [3, 4]))
+    complex.append((10.0, 1, [4, 5]))
+    complex.append((11.0, 1, [5, 3]))
+    complex.append((12.0, 0, [6]))
+    complex.append((13.0, 0, [7]))
+    complex.append((14.0, 0, [8]))
+    complex.append((15.0, 1, [6, 7]))
+    complex.append((16.0, 1, [7, 8]))
+    complex.append((17.0, 1, [8, 6]))
 
+    # FIXME: I may have added twists under there
     # Link the triangles with twisted edges
     # Between triangle 1 and 2
-    complex.append((6.0, 1, [0, 3]))
-    complex.append((6.0, 1, [1, 4]))
-    complex.append((6.0, 1, [2, 5]))
+    complex.append((18.0, 1, [0, 3]))
+    complex.append((19.0, 1, [1, 4]))
+    complex.append((20.0, 1, [2, 5]))
     # Add the faces
-    complex.append((7.0, 2, [0, 1, 4])) # two edges from triangle 1 and one from triangle 2
-    complex.append((7.0, 2, [1, 2, 5]))
-    complex.append((7.0, 2, [2, 0, 3]))
-    complex.append((7.0, 2, [0, 4, 3])) # two edges from triangle 2 and one from triangle 1
-    complex.append((7.0, 2, [1, 5, 4]))
-    complex.append((7.0, 2, [2, 3, 5]))
+    complex.append((21.0, 2, [0, 1, 4])) # two edges from triangle 1 and one from triangle 2
+    complex.append((22.0, 2, [1, 2, 5]))
+    complex.append((23.0, 2, [2, 0, 3]))
+    complex.append((24.0, 2, [0, 4, 3])) # two edges from triangle 2 and one from triangle 1
+    complex.append((25.0, 2, [1, 5, 4]))
+    complex.append((26.0, 2, [2, 3, 5]))
 
     # Between triangle 2 and 3
-    complex.append((8.0, 1, [3, 6]))
-    complex.append((8.0, 1, [4, 7]))
-    complex.append((8.0, 1, [5, 8]))
+    complex.append((27.0, 1, [3, 6]))
+    complex.append((28.0, 1, [4, 7]))
+    complex.append((29.0, 1, [5, 8]))
     # Add the faces
-    complex.append((9.0, 2, [3, 4, 7])) # two edges from triangle 2 and one from triangle 3
-    complex.append((9.0, 2, [4, 5, 8]))
-    complex.append((9.0, 2, [5, 3, 6]))
-    complex.append((9.0, 2, [3, 7, 6])) # two edges from triangle 3 and one from triangle 2
-    complex.append((9.0, 2, [4, 8, 7]))
-    complex.append((9.0, 2, [5, 6, 8]))
+    complex.append((30.0, 2, [3, 4, 7])) # two edges from triangle 2 and one from triangle 3
+    complex.append((31.0, 2, [4, 5, 8]))
+    complex.append((32.0, 2, [5, 3, 6]))
+    complex.append((33.0, 2, [3, 7, 6])) # two edges from triangle 3 and one from triangle 2
+    complex.append((34.0, 2, [4, 8, 7]))
+    complex.append((35.0, 2, [5, 6, 8]))
 
     # Between triangle 3 and 1
-    complex.append((10.0, 1, [6, 0]))
-    complex.append((10.0, 1, [7, 1]))
-    complex.append((10.0, 1, [8, 2]))
+    complex.append((36.0, 1, [6, 0]))
+    complex.append((37.0, 1, [7, 1]))
+    complex.append((38.0, 1, [8, 2]))
     # Add the faces
-    complex.append((11.0, 2, [6, 7, 1])) # two edges from triangle 3 and one from triangle 1
-    complex.append((11.0, 2, [7, 8, 2]))
-    complex.append((11.0, 2, [8, 6, 0]))
-    complex.append((11.0, 2, [6, 1, 0])) # two edges from triangle 1 and one from triangle 3
-    complex.append((11.0, 2, [7, 2, 1]))
-    complex.append((11.0, 2, [8, 0, 2]))
+    complex.append((39.0, 2, [6, 7, 1])) # two edges from triangle 3 and one from triangle 1
+    complex.append((40.0, 2, [7, 8, 2]))
+    complex.append((41.0, 2, [8, 6, 0]))
+    complex.append((42.0, 2, [6, 1, 0])) # two edges from triangle 1 and one from triangle 3
+    complex.append((43.0, 2, [7, 2, 1]))
+    complex.append((44.0, 2, [8, 0, 2]))
 
     return complex
 
@@ -399,12 +419,32 @@ def write_complex(complex: list[float, int, list[int]], filename: str):
 
 # Write 2d, 3d, 4d, ..., 10d sphere
 def main():
-    for dim in range(3, 11):
+    for dim in range(2, 11):
         d_sphere = build_sphere(dim)
         write_complex(d_sphere, f"./filtrations/{dim}_sphere")
 
     torus = build_torus()
     write_complex(torus, "./filtrations/torus")
 
+    filtered_d_sphere_complex = read_filtration("./filtrations/5_sphere")
+    sort_simplices(filtered_d_sphere_complex)
+    print(filtered_d_sphere_complex)
+    boundary_matrix = build_boundary_matrix_sparse(filtered_d_sphere_complex)
+    reduced_matrix, low = reduce_matrix_sparse(boundary_matrix)
+    barcode = compute_barcode(reduced_matrix, low, filtered_d_sphere_complex)
+    write_barcode(barcode, "./output/5_sphere_barcode")
+    plot_barcode(barcode)
+
+    filtered_torus_complex = read_filtration("./filtrations/torus")
+    sort_simplices(filtered_torus_complex)
+    boundary_matrix = build_boundary_matrix_sparse(filtered_torus_complex)
+    reduced_matrix, low = reduce_matrix_sparse(boundary_matrix)
+    barcode = compute_barcode(reduced_matrix, low, filtered_torus_complex)
+    write_barcode(barcode, "./output/torus_barcode")
+
 if __name__ == "__main__":
     main()
+
+# For the example of d-dimensional sphere, we get betti numbers 1,0,0,...,0,1 coherent with exercise 2
+# For the others, TODO:
+# Do we need to check for the whole filtration ?
