@@ -107,7 +107,11 @@ def build_boundary_matrix_sparse(filtration: FilteredSimplicialComplex) -> Spars
     Returns a list of columns, where each column is represented as a set of row indices with non-zero entries."""
     boundary_matrix = []
     
-    for simplex in filtration:
+    simplex_lookup = {} # Store previous simplices for quick lookup, we suppose filtration is sorted
+
+    for i, simplex in enumerate(filtration):
+        simplex_lookup[(simplex.dim, str(sorted(simplex.vert)))] = i # need hashable key so no list or set
+        # sorted ensures {1,2} and {2,1} are treated the same
         if simplex.dim == 0:
             # 0-simplices have no boundary
             boundary_matrix.append(set())
@@ -118,10 +122,15 @@ def build_boundary_matrix_sparse(filtration: FilteredSimplicialComplex) -> Spars
                 # Create face by removing vertex v
                 face = simplex.vert - {v}
                 # Find index of face in filtration
-                for i, s in enumerate(filtration):
-                    if s.dim == simplex.dim - 1 and s.vert == face:
-                        boundary.add(i)
-                        break
+                # Before :
+                # for i, s in enumerate(filtration):
+                #     if s.dim == simplex.dim - 1 and s.vert == face:
+                #         boundary.add(i)
+                #         break
+                # After:
+                face_index = simplex_lookup.get((simplex.dim - 1, str(sorted(face))))
+                if face_index is not None:
+                    boundary.add(face_index)
             boundary_matrix.append(boundary)
     
     return boundary_matrix
@@ -418,33 +427,93 @@ def write_complex(complex: list[float, int, list[int]], filename: str):
 
 
 # Write 2d, 3d, 4d, ..., 10d sphere
-def main():
-    for dim in range(2, 11):
-        d_sphere = build_sphere(dim)
-        write_complex(d_sphere, f"./filtrations/{dim}_sphere")
+# def main():
+#     for dim in range(2, 11):
+#         d_sphere = build_sphere(dim)
+#         write_complex(d_sphere, f"./filtrations/{dim}_sphere")
 
-    torus = build_torus()
-    write_complex(torus, "./filtrations/torus")
+#     torus = build_torus()
+#     write_complex(torus, "./filtrations/torus")
 
-    filtered_d_sphere_complex = read_filtration("./filtrations/5_sphere")
-    sort_simplices(filtered_d_sphere_complex)
-    print(filtered_d_sphere_complex)
-    boundary_matrix = build_boundary_matrix_sparse(filtered_d_sphere_complex)
-    reduced_matrix, low = reduce_matrix_sparse(boundary_matrix)
-    barcode = compute_barcode(reduced_matrix, low, filtered_d_sphere_complex)
-    write_barcode(barcode, "./output/5_sphere_barcode")
-    plot_barcode(barcode)
+#     filtered_d_sphere_complex = read_filtration("./filtrations/5_sphere")
+#     sort_simplices(filtered_d_sphere_complex)
+#     print(filtered_d_sphere_complex)
+#     boundary_matrix = build_boundary_matrix_sparse(filtered_d_sphere_complex)
+#     reduced_matrix, low = reduce_matrix_sparse(boundary_matrix)
+#     barcode = compute_barcode(reduced_matrix, low, filtered_d_sphere_complex)
+#     write_barcode(barcode, "./output/5_sphere_barcode")
+#     plot_barcode(barcode)
 
-    filtered_torus_complex = read_filtration("./filtrations/torus")
-    sort_simplices(filtered_torus_complex)
-    boundary_matrix = build_boundary_matrix_sparse(filtered_torus_complex)
-    reduced_matrix, low = reduce_matrix_sparse(boundary_matrix)
-    barcode = compute_barcode(reduced_matrix, low, filtered_torus_complex)
-    write_barcode(barcode, "./output/torus_barcode")
+#     filtered_torus_complex = read_filtration("./filtrations/torus")
+#     sort_simplices(filtered_torus_complex)
+#     boundary_matrix = build_boundary_matrix_sparse(filtered_torus_complex)
+#     reduced_matrix, low = reduce_matrix_sparse(boundary_matrix)
+#     barcode = compute_barcode(reduced_matrix, low, filtered_torus_complex)
+#     write_barcode(barcode, "./output/torus_barcode")
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
+
+# 6. Comparisons TODO:
 
 # For the example of d-dimensional sphere, we get betti numbers 1,0,0,...,0,1 coherent with exercise 2
 # For the others, TODO:
 # Do we need to check for the whole filtration ?
+
+# 7. Timing the filtrations
+import time
+
+def main():
+    for file_suffix in ["A", "B", "C", "D"]:
+        start_time = time.time()
+        filename = f"./filtrations/filtration_{file_suffix}.txt"
+        print(f"Processing filtration from file: {filename}")
+        
+        reading_start_time = time.time()
+        filtration = read_filtration(filename)
+        sort_simplices(filtration)
+        reading_end_time = time.time()
+        print(f"Filtration read and sorted in {reading_end_time - reading_start_time:.2f} seconds")
+
+        processing_start_time = time.time()
+        boundary_matrix = build_boundary_matrix_sparse(filtration)
+        processing_end_time = time.time()
+        print(f"Boundary matrix built in {processing_end_time - processing_start_time:.2f} seconds")
+
+        reduction_start_time = time.time()
+        reduced_matrix, low = reduce_matrix_sparse(boundary_matrix)
+        reduction_end_time = time.time()
+        print(f"Boundary matrix reduced in {reduction_end_time - reduction_start_time:.2f} seconds")
+
+        barcode_start_time = time.time()
+        barcode = compute_barcode(reduced_matrix, low, filtration)
+        barcode_end_time = time.time()
+        print(f"Barcode computed in {barcode_end_time - barcode_start_time:.2f} seconds")
+
+        output_filename = f"./output/large_{file_suffix}_barcode"
+        write_barcode(barcode, output_filename)
+
+        end_time = time.time()
+
+        print(f"Barcode written to '{output_filename}' in {end_time - start_time:.2f} seconds")
+
+
+if __name__ == "__main__":
+    main()
+
+# 8. Interprétations 
+# H0: On note que pour les filtrations A, B, C, D il n'y a qu'une barre infinie à la fin des filtrations
+# Donc une seule composante connexe
+# En fait c'est logique, la offset filtration on commence avec une boule à chaque point, et on connecte petit à petit les boules
+# en les faisant grandir
+# Donc à la fin on a une seule grosse boule qui englobe tout le nuage de points
+
+# On prend la C
+# Je commence à t = 0 juste un peu après (au début c'est juste tous les points qui sont ajoutés petit à petit)
+# On a rapidement qu'une seule composante connexe (pareil pour toutes les autres d'ailleurs)
+# ça pourrait pas être des sphères arrangées en cercle ? le cercle de diamètre 9 genre et les sphères individuelles de diamètre 1, 
+# pendant que ça grandit, ça fait un vide (dimension 2) qui est terminé quand les sphères se rencontrent toutes, 
+# et on a un gros cycle jusqu'à 9 (mais que faire du cycle à 1 ?)
+# Peut-être qu'il y a un autre plus petit anneau de sphères à l'intérieur qui crée le cycle à 1
+# Mais non car on a vite qu'une seule composante connexe
+# Non ça marche pas même un premier vide qui nait tout seul puis plein d'autres vides qui naissent et meurent
